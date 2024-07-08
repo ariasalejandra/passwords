@@ -1,3 +1,4 @@
+import pickle
 import tkinter as tk 
 from tkinter import messagebox
 from cryptography.fernet import Fernet 
@@ -7,6 +8,17 @@ password = "Default"
 def generate_key():
     return Fernet.generate_key()
 
+def save_passwords(passwords, filename='passwords.pkl'):
+    with open(filename, 'wb') as f:
+        pickle.dump(passwords, f)
+
+def load_passwords(filename='passwords.pkl'):
+    try:
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return {}
+
 def encrypt_password(key, password):
     cipher_suite = Fernet(key)
     return cipher_suite.encrypt(password.encode()).decode()
@@ -15,7 +27,18 @@ def decrypt_password(key, encrypted_password):
     cipher_suite = Fernet(key)
     return cipher_suite.decrypt(encrypted_password.encode()).decode()
 
-passwords = {}
+def save_key(key, filename='key.pkl'):
+    with open(filename, 'wb') as f:
+        pickle.dump(key, f)
+
+def load_key(filename='key.pkl'):
+    try:
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return None
+
+passwords = load_passwords()
 
 def add_password():
     service = service_entry.get()
@@ -24,6 +47,7 @@ def add_password():
     if service and username and password:
         encrypted_password = encrypt_password(key, password)
         passwords[service] = {'username':username, 'password':encrypted_password}
+        save_passwords(passwords)
         messagebox.showinfo('Success', f'Password for {service} added successfully')
     else:
         messagebox.showerror('Error', 'Please fill all the fields')
@@ -37,7 +61,11 @@ def get_password():
     else:
         messagebox.showerror('Error', f'No password saved for {service}')
 
-key = generate_key()
+key = load_key()
+if key is None:
+    key = generate_key()
+    save_key(key)
+
 instructions = '''To add password fill all the fields and press "Add Password"
 To view password, enter Account Name and press "Get Password"'''
 signature = "Made by: Alejandra Arias"
